@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Diş Ödeme">
+<title>Diş Tedavisi Takibi</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --border: rgba(255,255,255,0.08);
+    --accent: #c8f060;
+    --accent2: #60c8f0;
+    --danger: #f06060;
+    --text: #f0ede8;
+    --muted: rgba(240,237,232,0.45);
+    --radius: 20px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  body {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: -100px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(200,240,96,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(96,200,240,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 430px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 24px 20px 32px;
+    gap: 20px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.8;
+  }
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--text);
+  }
+
+  /* Progress card */
+  .progress-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0.6;
+  }
+
+  .progress-numbers {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .prog-paid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .prog-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .prog-amount {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .prog-remaining {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: right;
+  }
+  .prog-remaining-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    color: var(--text);
+  }
+
+  .progress-bar-wrap {
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 100px;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    min-width: 0%;
+  }
+
+  .progress-percent {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+  }
+  .progress-percent span {
+    color: var(--accent);
+  }
+
+  /* Input card */
+  .input-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .input-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .input-wrap label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type="number"]:focus {
+    border-color: rgba(200,240,96,0.4);
+  }
+
+  .currency-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .currency-toggle label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .toggle-buttons {
+    display: flex;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    height: 54px;
+  }
+  .toggle-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .toggle-btn.active {
+    background: var(--accent);
+    color: #0a0a0f;
+    border-radius: 10px;
+    margin: 4px;
+    height: calc(100% - 8px);
+    flex: none;
+    width: calc(50% - 4px);
+  }
+  .toggle-btn:not(.active):hover {
+    color: var(--text);
+  }
+
+  /* Rate display */
+  input[type="date"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+    color-scheme: dark;
+  }
+  input[type="date"]:focus {
+    border-color: rgba(200,240,96,0.4);
+  }
+
+  .rate-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(96,200,240,0.06);
+    border: 1px solid rgba(96,200,240,0.15);
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+    display: none;
+  }
+  .rate-display.visible { display: flex; }
+  .rate-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Add button */
+  .add-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #0a0a0f;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .add-btn:active {
+    transform: scale(0.97);
+    background: #b8e050;
+  }
+  .add-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .add-btn .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #0a0a0f;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: none;
+  }
+  .add-btn.loading .spinner { display: block; }
+  .add-btn.loading .btn-text { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* History */
+  .history-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .history-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .clear-btn {
+    background: none;
+    border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--danger);
+    cursor: pointer;
+    opacity: 0.6;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: opacity 0.2s;
+  }
+  .clear-btn:hover { opacity: 1; }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .item-left {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .item-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .item-original {
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .item-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+  .item-usd {
+    font-family: 'DM Mono', monospace;
+    font-size: 17px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .item-rate {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: color 0.2s;
+    margin-left: 10px;
+  }
+  .delete-btn:hover { color: var(--danger); }
+
+  .empty-state {
+    text-align: center;
+    padding: 32px 20px;
+    color: var(--muted);
+    font-size: 14px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.05em;
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 12px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 999;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.success { border-color: rgba(200,240,96,0.3); color: var(--accent); }
+  .toast.error { border-color: rgba(240,96,96,0.3); color: var(--danger); }
+
+  /* Install hint */
+  .install-hint {
+    background: rgba(96,200,240,0.05);
+    border: 1px solid rgba(96,200,240,0.12);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    display: none;
+  }
+  .install-hint.show { display: block; }
+  .install-hint strong { color: var(--accent2); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-label">Borç Takibi</div>
+    <h1>Diş Tedavisi<br><em>Ödemeleri</em></h1>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-card">
+    <div class="progress-numbers">
+      <div class="prog-paid">
+        <div class="prog-label">Ödenen</div>
+        <div class="prog-amount" id="totalPaid">$0</div>
+      </div>
+      <div class="prog-remaining">
+        <div class="prog-label">Kalan</div>
+        <div class="prog-remaining-amount" id="totalRemaining">$2,000</div>
+      </div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+    </div>
+    <div class="progress-percent">Hedef $2,000 — <span id="progressPercent">%0</span> tamamlandı</div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-card">
+    <div class="input-row">
+      <div class="input-wrap">
+        <label>Miktar</label>
+        <input type="number" id="amountInput" placeholder="0" inputmode="decimal" step="0.01" min="0">
+      </div>
+      <div class="currency-toggle">
+        <label>Para birimi</label>
+        <div class="toggle-buttons">
+          <button class="toggle-btn active" id="btnUSD" onclick="setCurrency('USD')">USD</button>
+          <button class="toggle-btn" id="btnEUR" onclick="setCurrency('EUR')">EUR</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-wrap" style="margin-top:0">
+      <label style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;">Ödeme Tarihi</label>
+      <input type="date" id="dateInput" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-family:'DM Mono',monospace;font-size:15px;color:var(--text);outline:none;-webkit-appearance:none;appearance:none;color-scheme:dark;">
+    </div>
+
+    <div class="rate-display" id="rateDisplay">
+      <div class="rate-dot"></div>
+      <span id="rateText">Kur yükleniyor...</span>
+    </div>
+
+    <button class="add-btn" id="addBtn" onclick="addPayment()">
+      <div class="spinner"></div>
+      <span class="btn-text">＋ Ödeme Ekle</span>
+    </button>
+  </div>
+
+  <!-- Install hint for iOS -->
+  <div class="install-hint" id="installHint">
+    💡 <strong>Ana ekrana ekle:</strong> Aşağıdaki paylaş butonuna dokun → "Ana Ekrana Ekle" seç. Uygulama gibi açılır, veriler saklanır.
+  </div>
+
+  <!-- History -->
+  <div class="history-section">
+    <div class="history-header">
+      <div class="history-title">Ödeme Geçmişi</div>
+      <button class="clear-btn" onclick="clearAll()">Temizle</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const GOAL = 2000;
+let currency = 'USD';
+let eurRate = null;
+let payments = [];
+
+// Load from localStorage
+function loadData() {
+  try {
+    const saved = localStorage.getItem('dis_tedavisi_payments');
+    if (saved) payments = JSON.parse(saved);
+  } catch(e) { payments = []; }
+}
+
+function saveData() {
+  try {
+    localStorage.setItem('dis_tedavisi_payments', JSON.stringify(payments));
+  } catch(e) {}
+}
+
+function setCurrency(c) {
+  currency = c;
+  document.getElementById('btnUSD').classList.toggle('active', c === 'USD');
+  document.getElementById('btnEUR').classList.toggle('active', c === 'EUR');
+  const rateDisplay = document.getElementById('rateDisplay');
+  if (c === 'EUR') {
+    rateDisplay.classList.add('visible');
+    fetchRate();
+  } else {
+    rateDisplay.classList.remove('visible');
+  }
+}
+
+async function fetchRate() {
+  const rateText = document.getElementById('rateText');
+  rateText.textContent = 'Güncel kur yükleniyor...';
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/EUR');
+    const data = await res.json();
+    eurRate = data.rates.USD;
+    rateText.textContent = `1 EUR = ${eurRate.toFixed(4)} USD (güncel)`;
+  } catch(e) {
+    // fallback
+    eurRate = 1.08;
+    rateText.textContent = `1 EUR ≈ ${eurRate.toFixed(2)} USD (tahmini)`;
+  }
+}
+
+async function addPayment() {
+  const input = document.getElementById('amountInput');
+  const amount = parseFloat(input.value);
+  if (!amount || amount <= 0) {
+    showToast('Lütfen geçerli bir miktar girin', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('addBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  let usdAmount = amount;
+  let rateUsed = null;
+
+  if (currency === 'EUR') {
+    if (!eurRate) await fetchRate();
+    usdAmount = amount * eurRate;
+    rateUsed = eurRate;
+  }
+
+  const dateVal = document.getElementById('dateInput').value;
+  let displayDate;
+  if (dateVal) {
+    const [y,m,d] = dateVal.split('-');
+    displayDate = d + '.' + m + '.' + y;
+  } else {
+    displayDate = new Date().toLocaleDateString('tr-TR');
+  }
+
+  const payment = {
+    id: Date.now(),
+    date: displayDate,
+    original: amount,
+    currency: currency,
+    usd: usdAmount,
+    rate: rateUsed
+  };
+
+  payments.unshift(payment);
+  saveData();
+  input.value = '';
+
+  updateUI();
+  renderHistory();
+  showToast(`✓ $${usdAmount.toFixed(2)} eklendi`, 'success');
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+function deletePayment(id) {
+  payments = payments.filter(p => p.id !== id);
+  saveData();
+  updateUI();
+  renderHistory();
+  showToast('Ödeme silindi', '');
+}
+
+function clearAll() {
+  if (payments.length === 0) return;
+  if (confirm('Tüm ödemeler silinsin mi?')) {
+    payments = [];
+    saveData();
+    updateUI();
+    renderHistory();
+  }
+}
+
+function updateUI() {
+  const total = payments.reduce((s, p) => s + p.usd, 0);
+  const remaining = Math.max(0, GOAL - total);
+  const pct = Math.min(100, (total / GOAL) * 100);
+
+  document.getElementById('totalPaid').textContent = '$' + total.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  document.getElementById('totalRemaining').textContent = '$' + remaining.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressPercent').textContent = '%' + pct.toFixed(1);
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (payments.length === 0) {
+    list.innerHTML = '<div class="empty-state">Henüz ödeme yok</div>';
+    return;
+  }
+  list.innerHTML = payments.map(p => `
+    <div class="history-item">
+      <div class="item-left">
+        <div class="item-date">${p.date}</div>
+        <div class="item-original">${p.original.toFixed(2)} ${p.currency}</div>
+      </div>
+      <div class="item-right">
+        <div class="item-usd">$${p.usd.toFixed(2)}</div>
+        ${p.rate ? `<div class="item-rate">kur: ${p.rate.toFixed(4)}</div>` : ''}
+      </div>
+      <button class="delete-btn" onclick="deletePayment(${p.id})">×</button>
+    </div>
+  `).join('');
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  void t.offsetWidth;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// iOS install hint
+function checkInstallHint() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone;
+  if (isIOS && !isStandalone) {
+    document.getElementById('installHint').classList.add('show');
+  }
+}
+
+// Set today as default date
+function setTodayDate() {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth()+1).padStart(2,'0');
+  const d = String(today.getDate()).padStart(2,'0');
+  document.getElementById('dateInput').value = y+'-'+m+'-'+d;
+}
+
+// Init
+loadData();
+setTodayDate();
+updateUI();
+renderHistory();
+checkInstallHint();
+
+// Enter key
+document.getElementById('amountInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addPayment();
+});
+</script>
+</body>
+</html>
