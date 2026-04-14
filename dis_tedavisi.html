@@ -580,7 +580,10 @@
   <div class="history-section">
     <div class="history-header">
       <div class="history-title">Ödeme Geçmişi</div>
-      <button class="clear-btn" onclick="clearAll()">Temizle</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="clear-btn" style="color:var(--accent2);opacity:0.7;" onclick="exportPDF()">↓ PDF</button>
+        <button class="clear-btn" onclick="clearAll()">Temizle</button>
+      </div>
     </div>
     <div class="history-list" id="historyList"></div>
   </div>
@@ -763,6 +766,98 @@ function setTodayDate() {
   const m = String(today.getMonth()+1).padStart(2,'0');
   const d = String(today.getDate()).padStart(2,'0');
   document.getElementById('dateInput').value = y+'-'+m+'-'+d;
+}
+
+function exportPDF() {
+  if (payments.length === 0) {
+    showToast('Henüz ödeme yok', 'error');
+    return;
+  }
+  const total = payments.reduce((s, p) => s + p.usd, 0);
+  const remaining = Math.max(0, 2000 - total);
+  const pct = Math.min(100, (total / 2000) * 100);
+  const now = new Date().toLocaleDateString('tr-TR');
+
+  const rows = payments.map(p => `
+    <tr>
+      <td>${p.date}</td>
+      <td>${p.original.toFixed(2)} ${p.currency}</td>
+      <td style="color:#2a7a2a;font-weight:600;">$${p.usd.toFixed(2)}</td>
+      <td style="font-size:11px;color:#888;">${p.rate ? 'kur: ' + p.rate.toFixed(4) : 'USD'}</td>
+    </tr>
+  `).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Diş Tedavisi Ödemeleri</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
+  h1 { font-size: 24px; font-weight: 300; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 13px; margin-bottom: 32px; }
+  .summary { display: flex; gap: 24px; margin-bottom: 32px; padding: 20px; background: #f8f8f8; border-radius: 12px; }
+  .sum-item { display: flex; flex-direction: column; gap: 4px; }
+  .sum-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; }
+  .sum-value { font-size: 22px; font-weight: 500; }
+  .sum-value.green { color: #2a7a2a; }
+  .progress-wrap { background: #e8e8e8; border-radius: 100px; height: 6px; margin-bottom: 32px; }
+  .progress-fill { background: linear-gradient(90deg, #4caf50, #66bb6a); height: 100%; border-radius: 100px; width: ${pct.toFixed(1)}%; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 10px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; border-bottom: 2px solid #e8e8e8; }
+  td { padding: 12px; font-size: 14px; border-bottom: 1px solid #f0f0f0; }
+  tr:last-child td { border-bottom: none; }
+  .footer { margin-top: 32px; font-size: 12px; color: #bbb; text-align: center; }
+</style>
+</head>
+<body>
+  <h1>Diş Tedavisi Ödemeleri</h1>
+  <div class="subtitle">Oluşturulma tarihi: ${now}</div>
+  <div class="summary">
+    <div class="sum-item">
+      <div class="sum-label">Toplam Ödenen</div>
+      <div class="sum-value green">$${total.toFixed(2)}</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-label">Kalan Borç</div>
+      <div class="sum-value">$${remaining.toFixed(2)}</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-label">Tamamlanan</div>
+      <div class="sum-value">%${pct.toFixed(1)}</div>
+    </div>
+  </div>
+  <div class="progress-wrap"><div class="progress-fill"></div></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Tarih</th>
+        <th>Orijinal</th>
+        <th>USD</th>
+        <th>Kur</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">Hedef: $2,000 · ${payments.length} ödeme</div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (win) {
+    win.onload = () => {
+      setTimeout(() => { win.print(); }, 500);
+    };
+  } else {
+    // fallback: download HTML
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dis_tedavisi_rapor.html';
+    a.click();
+  }
+  showToast('PDF hazırlanıyor...', 'success');
 }
 
 // Init
