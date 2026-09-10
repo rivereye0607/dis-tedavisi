@@ -27,7 +27,7 @@
   body {
     background-color: var(--bg);
     color: var(--text-main);
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px);
     display: flex;
@@ -44,6 +44,9 @@
 
   .header {
     padding: 12px 4px 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
   }
   .header h1 {
     font-size: 26px;
@@ -56,6 +59,26 @@
     color: var(--pastel-green-text);
     margin-top: 4px;
     letter-spacing: -0.3px;
+  }
+
+  .btn-pdf-share {
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    transition: all 0.2s ease;
+  }
+  .btn-pdf-share:active {
+    transform: scale(0.96);
+    background: var(--bg);
   }
 
   .card {
@@ -199,14 +222,120 @@
   .item-usd { font-size: 15px; font-weight: 700; color: var(--pastel-green-text); text-align: right; }
   .item-rate { font-size: 11px; color: var(--text-muted); text-align: right; }
   .delete-btn { background: none; border: none; color: var(--danger); font-size: 18px; margin-left: 12px; cursor: pointer; padding: 0 4px; }
+
+  /* Premium PDF Printing Styles */
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 18mm 16mm 18mm 16mm;
+    }
+    body {
+      background: #FFFFFF !important;
+      padding: 0 !important;
+      font-size: 12pt;
+      color: #000000;
+    }
+    .container {
+      max-width: 100% !important;
+      width: 100% !important;
+      gap: 20px;
+    }
+    .input-card, .btn-pdf-share, .delete-btn {
+      display: none !important;
+    }
+    .header {
+      padding: 0 0 16px 0 !important;
+      border-bottom: 2px solid #000000;
+      display: flex !important;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .header h1 {
+      font-size: 22pt;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      font-size: 15pt;
+      color: #2E7D32 !important;
+    }
+    .card {
+      border: 1px solid #E0E0E0 !important;
+      box-shadow: none !important;
+      padding: 16px 20px !important;
+      background: #FAFAFA !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .stats-grid {
+      margin-bottom: 12px;
+    }
+    .stat-box {
+      background: #FFFFFF !important;
+      border: 1px solid #E5E5EA !important;
+    }
+    .stat-box.highlight {
+      background: #E8F5E9 !important;
+    }
+    .history-list {
+      display: table !important;
+      width: 100% !important;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .history-item {
+      display: table-row !important;
+      background: transparent !important;
+      border: none !important;
+    }
+    .history-item > div:first-child {
+      display: table-cell !important;
+      padding: 9px 0 !important;
+      border-bottom: 1px solid #E5E5EA !important;
+    }
+    .history-item > div:last-child {
+      display: table-cell !important;
+      text-align: right !important;
+      padding: 9px 0 !important;
+      border-bottom: 1px solid #E5E5EA !important;
+    }
+    .item-date {
+      font-family: -apple-system-monospaced, monospace;
+      font-size: 10pt;
+      color: #666666 !important;
+    }
+    .item-orig {
+      font-size: 11pt;
+      font-weight: 600;
+    }
+    .item-usd {
+      font-size: 12pt;
+      font-weight: 700;
+      color: #111111 !important;
+    }
+    .item-rate {
+      font-size: 9pt;
+      color: #888888 !important;
+    }
+  }
 </style>
 </head>
 <body>
 
 <div class="container">
   <div class="header">
-    <h1>Deniz Ortodonti Takibi</h1>
-    <p>Hedef: 2.000 USD</p>
+    <div>
+      <h1>Deniz Ortodonti Takibi</h1>
+      <p>Hedef: 2.000 USD</p>
+    </div>
+    <button class="btn-pdf-share" onclick="window.print()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+        <polyline points="16 6 12 2 8 6"/>
+        <line x1="12" y1="2" x2="12" y2="15"/>
+      </svg>
+      Paylaş
+    </button>
   </div>
 
   <div class="card">
@@ -228,7 +357,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card input-card">
     <div class="form-group">
       <div class="form-row">
         <input type="number" id="amountInput" class="input-field" placeholder="Miktar" inputmode="decimal">
@@ -269,7 +398,7 @@ const initialPayments = [
 let payments = [];
 
 function loadData() {
-  const saved = localStorage.getItem('dis_takip_gh');
+  const saved = localStorage.getItem('dis_takip_v3');
   if (saved) {
     payments = JSON.parse(saved);
   } else {
@@ -279,7 +408,7 @@ function loadData() {
 }
 
 function saveData() {
-  localStorage.setItem('dis_takip_gh', JSON.stringify(payments));
+  localStorage.setItem('dis_takip_v3', JSON.stringify(payments));
 }
 
 function setCurrency(c) {
